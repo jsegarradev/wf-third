@@ -1,0 +1,59 @@
+# ai-scaffold CI gate (optional module). Copy to .github/workflows/ci.yml.
+# Enable only once tests are green — a red badge is worse than no CI.
+#
+# TOPOLOGY:
+#   monorepo -> keep both jobs (defaults BACKEND_DIR=backend, FRONTEND_DIR=frontend).
+#   polyrepo/single -> keep ONLY the relevant job and set its working-directory to '.'.
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Least privilege: CI only reads the repo.
+permissions:
+  contents: read
+
+# Cancel superseded runs on the same ref instead of piling them up.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Spotless + tests
+        # Use the committed wrapper for a pinned Maven version (matches local pre-commit).
+        run: ./mvnw -B spotless:check test
+        working-directory: ${{ vars.BACKEND_DIR || 'backend' }}
+
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+          cache-dependency-path: ${{ vars.FRONTEND_DIR || 'frontend' }}/package-lock.json
+      - name: Install
+        run: npm ci
+        working-directory: ${{ vars.FRONTEND_DIR || 'frontend' }}
+      - name: Lint
+        run: npx eslint .
+        working-directory: ${{ vars.FRONTEND_DIR || 'frontend' }}
+      - name: Test
+        # NOTE: no --browsers flag — that's Karma-only. Angular 21's default unit-test
+        # builder is Vitest/jsdom (no browser). --watch=false works across both runners.
+        run: npx ng test --watch=false
+        working-directory: ${{ vars.FRONTEND_DIR || 'frontend' }}
