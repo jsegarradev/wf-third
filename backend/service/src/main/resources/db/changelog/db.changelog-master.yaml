@@ -1,0 +1,13 @@
+# Master changelog — thin index only (NOT a place for schema changes).
+# Changesets themselves are SQL formatted changelogs in changes/*.sql.
+# The root must be a modeled format (YAML/XML) because `includeAll` is not available
+# in SQL changelogs — but it holds zero schema, just this include. All real DDL is SQL.
+# includeAll picks up every changes/*.sql in filename order, so new migrations need
+# NO edit here: just add an ordered file (001_, 002_, ...).
+databaseChangeLog:
+  - includeAll:
+      path: changes/
+      relativeToChangelogFile: true
+      # empty changes/ (skeleton with no migrations yet) → Liquibase throws
+      # "directory was empty" on boot; this makes an empty dir a no-op instead.
+      errorIfMissingOrEmpty: false
