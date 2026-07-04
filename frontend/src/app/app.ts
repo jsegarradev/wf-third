@@ -1,0 +1,14 @@
+import { Component, signal } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+
+import { AppShell } from './shared/app-shell/app-shell';
+
+@Component({
+    selector: 'app-root',
+    imports: [RouterOutlet, AppShell],
+    templateUrl: './app.html',
+    styleUrl: './app.scss',
+})
+export class App {
+    protected readonly title = signal('wf-third');
+}
